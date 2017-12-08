@@ -15,7 +15,7 @@ import base64
 UPLOAD_REGEX = "upload [a-zA-Z0-9_]*."
 DOWNLOAD_REGEX = "download [a-zA-Z0-9_]*."
 DIRECTORY_REGEX = "dir [a-zA-Z0-9_/.]*"
-LOCK_REGEX = "lock [a-zA-Z0-9_/.]* [0-9]*"
+
 
 
 class TCPClient:
@@ -24,15 +24,13 @@ class TCPClient:
     DIR_PORT = 8005
     FILE_PORT = 8006
     DIR_HOST = HOST
-    LOCK_HOST = HOST
     UPLOAD_HEADER = "UPLOAD: %s\nDATA: %s\n\n"
     DOWNLOAD_HEADER = "DOWNLOAD: %s\n\n"
     DIRECTORY_HEADER = "GET_SERVER: \nFILENAME: %s\n\n"
     SERVER_RESPONSE = "PRIMARY_SERVER: .*\nPORT: .*\nFILENAME: .*"
-    LOCK_HEADER = "LOCK_FILE: %s\nTime: %d\n\n"
-    LOCK_RESPONSE = "LOCK_RESPONSE: \nFILENAME: .*\nTIME: .*\n\n"
+
     FAIL_RESPONSE = "ERROR: .*\nMESSAGE: .*\n\n"
-    UNLOCK_HEADER = "UNLOCK_FILE: %s\n\n"
+
     REQUEST = "%s"
     LENGTH = 4096
     CLIENT_ROOT = os.getcwd()
@@ -59,8 +57,6 @@ class TCPClient:
                 server = params[0].split()[1]
                 port = int(params[1].split()[1])
                 open_file = params[2].split()[1]
-                # Get lock on file before downloading
-                #self.__lock_file(filename, 10)
                 file_downloaded = self.__download_file(server, port, open_file)
                 if file_downloaded:
                     self.open_files[filename] = open_file
@@ -72,8 +68,6 @@ class TCPClient:
         if filename in self.open_files.keys():
             request = self.__get_directory(filename)
             if re.match(self.SERVER_RESPONSE, request):
-                # Remove lock from file
-                #self.__unlock_file(filename)
                 params = request.splitlines()
                 server = params[0].split()[1]
                 open_file = params[2].split()[1]
