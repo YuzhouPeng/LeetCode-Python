@@ -168,22 +168,6 @@ class TCPClient:
 
         return self.__send_request(request, self.DIR_HOST, self.DIR_PORT)
 
-    def __lock_file(self, filename, lock_time):
-        """Send a request to the server to locks a file"""
-        request = self.LOCK_HEADER % (filename, lock_time)
-        request_data = self.__send_request(request, self.LOCK_HOST, self.LOCK_PORT)
-        if re.match(self.FAIL_RESPONSE, request_data):
-            # If failed to lock the file, wait a time and try again
-            request_data = request_data.splitlines()
-            wait_time = float(request_data[1].split()[1])
-            time.sleep(wait_time)
-            self.__lock_file(filename, lock_time)
-        return True
-
-    def __unlock_file(self, filename):
-        """Send a request to the server to unlock a file"""
-        request = self.UNLOCK_HEADER % filename
-        return self.__send_request(request, self.LOCK_HOST, self.LOCK_PORT)
 
 
 class ThreadHandler(threading.Thread):
@@ -244,16 +228,6 @@ def main():
             con.write(file_name, data)
             con.close(file_name)
         elif re.match(DOWNLOAD_REGEX, user_input.lower()):
-            request = user_input.lower()
-            file_name = request.split()[1]
-            con.open(file_name)
-            con.close(file_name)
-        elif re.match(DIRECTORY_REGEX, user_input.lower()):
-            request = user_input.lower()
-            file_name = request.split()[1]
-            con.open(file_name)
-            con.close(file_name)
-        elif re.match(LOCK_REGEX, user_input.lower()):
             request = user_input.lower()
             file_name = request.split()[1]
             con.open(file_name)
