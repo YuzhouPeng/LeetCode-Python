@@ -6,6 +6,7 @@ mkdir -p DirectoryServerFiles/8009
 mkdir -p DirectoryServerFiles/8010
 
 python directoryServer.py 8005 &
+python lockServer.py 8007 &
 python fileServer.py 8006 &
 python fileServer.py 8009 &
 python fileServer.py 8010 &
