@@ -1,6 +1,3 @@
-# FileServer.py
-# Project CS4032
-# Cathal Geoghegan
 
 import socket
 import os
@@ -23,7 +20,7 @@ class FileServer(TCPServer):
     BUCKET_NAME = "DirectoryServerFiles"
     BUCKET_LOCATION = os.path.join(SERVER_ROOT, BUCKET_NAME)
     DIR_HOST = "0.0.0.0"
-    DIR_PORT = 8005
+    DIR_PORT = 7333
 
     def __init__(self, port_use=None):
         TCPServer.__init__(self, port_use, self.handler)

@@ -1,6 +1,3 @@
-# TCPServer.py
-# Project CS4032
-# Cathal Geoghegan
 
 import socket
 import threading
