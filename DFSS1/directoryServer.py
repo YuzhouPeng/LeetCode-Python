@@ -20,6 +20,31 @@ class DirectoryServer(TCPServer):
     DELETE_DIR_REGEX = "DELETE_DIR: \nDIRECTORY: [a-zA-Z0-9_./]*\n\n"
     DATABASE = "Database/directories.db"
 
+    def get_slaves(self, con, addr, text):
+        # Function that gets the list of slave servers
+        request = text.splitlines()
+        host = request[0].split()[1]
+        port = request[1].split()[1]
+        slave_string = self.get_slave_string(host, port)
+        return_string = self.SLAVE_RESPONSE_HEADER % slave_string
+        con.sendall(return_string)
+        return
+
+    def find_host(self, path):
+        # Function that takes a path and returns the server that contains that directories files
+        return_host = (False, False)
+        con = db.connect(self.DATABASE)
+        with con:
+            cur = con.cursor()
+            cur.execute("SELECT Server FROM Directories WHERE Path = ?", (path,))
+            server = cur.fetchone()
+            if server:
+                server_id = server[0]
+                cur = con.cursor()
+                cur.execute("SELECT Server, Port FROM Servers WHERE Id = ?", (server_id,))
+                return_host = cur.fetchone()
+        return return_host
+
     def __init__(self, port_use=None):
         TCPServer.__init__(self, port_use, self.handler)
         self.create_tables()
@@ -56,30 +81,6 @@ class DirectoryServer(TCPServer):
         con.sendall(return_string)
         return
 
-    def get_slaves(self, con, addr, text):
-        # Function that gets the list of slave servers
-        request = text.splitlines()
-        host = request[0].split()[1]
-        port = request[1].split()[1]
-        slave_string = self.get_slave_string(host, port)
-        return_string = self.SLAVE_RESPONSE_HEADER % slave_string
-        con.sendall(return_string)
-        return
-
-    def find_host(self, path):
-        # Function that takes a path and returns the server that contains that directories files
-        return_host = (False, False)
-        con = db.connect(self.DATABASE)
-        with con:
-            cur = con.cursor()
-            cur.execute("SELECT Server FROM Directories WHERE Path = ?", (path,))
-            server = cur.fetchone()
-            if server:
-                server_id = server[0]
-                cur = con.cursor()
-                cur.execute("SELECT Server, Port FROM Servers WHERE Id = ?", (server_id,))
-                return_host = cur.fetchone()
-        return return_host
 
     def pick_random_host(self):
         # Function to pick a random host from the database

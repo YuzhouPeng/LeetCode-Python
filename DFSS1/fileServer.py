@@ -22,22 +22,6 @@ class FileServer(TCPServer):
     DIR_HOST = "0.0.0.0"
     DIR_PORT = 7333
 
-    def __init__(self, port_use=None):
-        TCPServer.__init__(self, port_use, self.handler)
-        self.BUCKET_LOCATION = os.path.join(self.BUCKET_LOCATION, str(self.PORT))
-
-    def handler(self, message, con, addr):
-        if re.match(self.UPLOAD_REGEX, message):
-            self.upload(con, addr, message)
-        elif re.match(self.DOWNLOAD_REGEX, message):
-            self.download(con, addr, message)
-        elif re.match(self.UPDATE_REGEX, message):
-            self.update(con, addr, message)
-        else:
-            return False
-
-        return True
-
     def upload(self, con, addr, text):
         # Handler for file upload requests
         filename, data = self.execute_write(text)
@@ -57,6 +41,23 @@ class FileServer(TCPServer):
         return_string = self.DOWNLOAD_RESPONSE % (base64.b64encode(data))
         con.sendall(return_string)
         return
+
+    def __init__(self, port_use=None):
+        TCPServer.__init__(self, port_use, self.handler)
+        self.BUCKET_LOCATION = os.path.join(self.BUCKET_LOCATION, str(self.PORT))
+
+    def handler(self, message, con, addr):
+        if re.match(self.UPLOAD_REGEX, message):
+            self.upload(con, addr, message)
+        elif re.match(self.DOWNLOAD_REGEX, message):
+            self.download(con, addr, message)
+        elif re.match(self.UPDATE_REGEX, message):
+            self.update(con, addr, message)
+        else:
+            return False
+
+        return True
+
 
     def update(self, con, addr, text):
         # Handler for file update requests

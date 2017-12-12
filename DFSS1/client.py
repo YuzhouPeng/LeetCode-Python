@@ -9,18 +9,18 @@ import Queue
 import base64
 
 # Regex used for the testing of the client proxy
-UPLOAD_REGEX = "upload [a-zA-Z0-9_]*."
-DOWNLOAD_REGEX = "download [a-zA-Z0-9_]*."
-DIRECTORY_REGEX = "dir [a-zA-Z0-9_/.]*"
+Upload_Command = "upload [a-zA-Z0-9_]*."
+Download_Command = "download [a-zA-Z0-9_]*."
+
 
 
 
 class TCPClient:
-    PORT = 8000
+    PortNum = 8000
     HOST = "0.0.0.0"
-    DIR_PORT = 7333
-    FILE_PORT = 7001
-    DIR_HOST = HOST
+    Directory_Port = 7333
+    FileServer_Port = 7001
+    Directory_Host = HOST
     UPLOAD_HEADER = "UPLOAD: %s\nDATA: %s\n\n"
     DOWNLOAD_HEADER = "DOWNLOAD: %s\n\n"
     DIRECTORY_HEADER = "GET_SERVER: \nFILENAME: %s\n\n"
@@ -34,12 +34,66 @@ class TCPClient:
 
     def __init__(self, port_use=None):
         if not port_use:
-            self.port_use = self.PORT
+            self.port_use = self.PortNum
         else:
             self.port_use = port_use
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.open_files = {}
         self.threadQueue = Queue.Queue()
+
+    def __send_request(self, data, server, port):
+        """Function that sends requests to remote server"""
+        return_data = ""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        sock.connect((server, port))
+        sock.sendall(self.REQUEST % data)
+
+        # Loop until all data received
+        while "\n\n" not in return_data:
+            data = sock.recv(self.LENGTH)
+            if len(data) == 0:
+                break
+            return_data += data
+
+        # Close and dereference the socket
+        sock.close()
+        sock = None
+        return return_data
+
+    def __raw_request(self, string):
+        """Send a raw request to remote server"""
+        return_data = ""
+        # Do nothing if the string is empty or socket doesn't exist
+        if len(string) > 0:
+            # Create socket if it doesn't exist
+            return_data = self.__send_request(string + "\n\n")
+        return return_data
+
+    def __upload_file(self, server, filename):
+        """Send a request to the server to upload a file"""
+        path = os.path.join(self.BUCKET_LOCATION, filename)
+
+        file_handle = open(path, "rb")
+        # Base64 encode the file so it can be sent in a message
+        data = file_handle.read()
+        data = base64.b64encode(data)
+
+        request = self.UPLOAD_HEADER % (filename, data)
+        return self.__send_request(request, server, self.FileServer_Port)
+
+    def __download_file(self, server, port, filename):
+        """Send a request to the server to download a file"""
+        path = os.path.join(self.BUCKET_LOCATION, filename)
+        # Download message containing file data and then base64 decode the data
+        request = self.DOWNLOAD_HEADER % (filename)
+        request_data = self.__send_request(request, server, port).splitlines()[0]
+        data = request_data.split()[0]
+
+        data = base64.b64decode(data)
+        file_handle = open(path, "wb+")
+        file_handle.write(data)
+        return True
 
     def open(self, filename):
         """Function opens a file by downloading from a remote server"""
@@ -97,65 +151,13 @@ class TCPClient:
             success = True
         return success
 
-    def __send_request(self, data, server, port):
-        """Function that sends requests to remote server"""
-        return_data = ""
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        sock.connect((server, port))
-        sock.sendall(self.REQUEST % data)
-
-        # Loop until all data received
-        while "\n\n" not in return_data:
-            data = sock.recv(self.LENGTH)
-            if len(data) == 0:
-                break
-            return_data += data
-
-        # Close and dereference the socket
-        sock.close()
-        sock = None
-        return return_data
-
-    def __raw_request(self, string):
-        """Send a raw request to remote server"""
-        return_data = ""
-        # Do nothing if the string is empty or socket doesn't exist
-        if len(string) > 0:
-            # Create socket if it doesn't exist
-            return_data = self.__send_request(string + "\n\n")
-        return return_data
-
-    def __upload_file(self, server, filename):
-        """Send a request to the server to upload a file"""
-        path = os.path.join(self.BUCKET_LOCATION, filename)
-
-        file_handle = open(path, "rb")
-        # Base64 encode the file so it can be sent in a message
-        data = file_handle.read()
-        data = base64.b64encode(data)
-
-        request = self.UPLOAD_HEADER % (filename, data)
-        return self.__send_request(request, server, self.FILE_PORT)
-
-    def __download_file(self, server, port, filename):
-        """Send a request to the server to download a file"""
-        path = os.path.join(self.BUCKET_LOCATION, filename)
-        # Download message containing file data and then base64 decode the data
-        request = self.DOWNLOAD_HEADER % (filename)
-        request_data = self.__send_request(request, server, port).splitlines()[0]
-        data = request_data.split()[0]
-
-        data = base64.b64decode(data)
-        file_handle = open(path, "wb+")
-        file_handle.write(data)
-        return True
 
     def __get_directory(self, filename):
         """Send a request to the server to find the location of a directory"""
         request = self.DIRECTORY_HEADER % filename
 
-        return self.__send_request(request, self.DIR_HOST, self.DIR_PORT)
+        return self.__send_request(request, self.Directory_Host, self.Directory_Port)
 
 
 
@@ -206,7 +208,7 @@ def main():
         user_input = raw_input("Enter a message to send or type exit:")
         if user_input.lower() == "exit":
             con = None
-        elif re.match(UPLOAD_REGEX, user_input.lower()):
+        elif re.match(Upload_Command, user_input.lower()):
             request = user_input.lower()
             path = os.path.join(TCPClient.BUCKET_LOCATION, user_input.lower().split()[1])
             file_handle = open(path, "rb")
@@ -215,7 +217,7 @@ def main():
             con.open(file_name)
             con.write(file_name, data)
             con.close(file_name)
-        elif re.match(DOWNLOAD_REGEX, user_input.lower()):
+        elif re.match(Download_Command, user_input.lower()):
             request = user_input.lower()
             file_name = request.split()[1]
             con.open(file_name)
