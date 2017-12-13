@@ -11,16 +11,23 @@ import base64
 # Regex used for the testing of the client proxy
 Upload_Command = "upload [a-zA-Z0-9_]*."
 Download_Command = "download [a-zA-Z0-9_]*."
+Directory_Command = "dir [a-zA-Z0-9_/.]*"
+Lock_Command = "lock [a-zA-Z0-9_/.]* [0-9]*"
 
 
 
 
 class TCPClient:
     PortNum = 8000
-    HOST = "0.0.0.0"
+    HOST = "0.0.0.1"
     Directory_Port = 7333
     FileServer_Port = 7001
     Directory_Host = HOST
+    LOCK_PORT = 7334
+    LOCK_HOST = HOST
+    LOCK_HEADER = "LOCK_FILE: %s\nTime: %d\n\n"
+    LOCK_RESPONSE = "LOCK_RESPONSE: \nFILENAME: .*\nTIME: .*\n\n"
+    UNLOCK_HEADER = "UNLOCK_FILE: %s\n\n"
     UPLOAD_HEADER = "UPLOAD: %s\nDATA: %s\n\n"
     DOWNLOAD_HEADER = "DOWNLOAD: %s\n\n"
     DIRECTORY_HEADER = "GET_SERVER: \nFILENAME: %s\n\n"
@@ -95,32 +102,47 @@ class TCPClient:
         file_handle.write(data)
         return True
 
+    def __lock_file(self, filename, lock_time):
+        """Send a request to the server to locks a file"""
+        request = self.LOCK_HEADER % (filename, lock_time)
+        request_data = self.__send_request(request, self.LOCK_HOST, self.LOCK_PORT)
+        if re.match(self.FAIL_RESPONSE, request_data):
+            # If failed to lock the file, wait a time and try again
+            request_data = request_data.splitlines()
+            wait_time = float(request_data[1].split()[1])
+            time.sleep(wait_time)
+            self.__lock_file(filename, lock_time)
+        return True
+
+    def __unlock_file(self, filename):
+        """Send a request to the server to unlock a file"""
+        request = self.UNLOCK_HEADER % filename
+        return self.__send_request(request, self.LOCK_HOST, self.LOCK_PORT)
+
     def open(self, filename):
-        """Function opens a file by downloading from a remote server"""
         file_downloaded = False
         if filename not in self.open_files.keys():
-            # Get the info of the server hosting the file
             request = self.__get_directory(filename)
             if re.match(self.SERVER_RESPONSE, request):
                 params = request.splitlines()
                 server = params[0].split()[1]
                 port = int(params[1].split()[1])
                 open_file = params[2].split()[1]
+                self.__lock_file(filename, 10)
                 file_downloaded = self.__download_file(server, port, open_file)
                 if file_downloaded:
                     self.open_files[filename] = open_file
         return file_downloaded
 
     def close(self, filename):
-        """Function closes a file by uploading it and removing the local copy"""
         file_uploaded = False
         if filename in self.open_files.keys():
             request = self.__get_directory(filename)
             if re.match(self.SERVER_RESPONSE, request):
+                self.__unlock_file(filename)
                 params = request.splitlines()
                 server = params[0].split()[1]
                 open_file = params[2].split()[1]
-                #Upload the file and then delete from local host
                 file_uploaded = self.__upload_file(server, open_file)
                 if file_uploaded:
                     path = os.path.join(self.CLIENT_ROOT, self.BUCKET_NAME)
@@ -205,8 +227,8 @@ def main():
         print "Unable to create socket connection: " + str(msg)
         con = None
     while con:
-        user_input = raw_input("Enter a message to send or type exit:")
-        if user_input.lower() == "exit":
+        user_input = raw_input("Please input command(upload or download) + filename to upload the file.\nIf you want to exit, please input 'leave'\n :")
+        if user_input.lower() == "leave":
             con = None
         elif re.match(Upload_Command, user_input.lower()):
             request = user_input.lower()
@@ -218,6 +240,16 @@ def main():
             con.write(file_name, data)
             con.close(file_name)
         elif re.match(Download_Command, user_input.lower()):
+            request = user_input.lower()
+            file_name = request.split()[1]
+            con.open(file_name)
+            con.close(file_name)
+        elif re.match(Directory_Command, user_input.lower()):
+            request = user_input.lower()
+            file_name = request.split()[1]
+            con.open(file_name)
+            con.close(file_name)
+        elif re.match(Lock_Command, user_input.lower()):
             request = user_input.lower()
             file_name = request.split()[1]
             con.open(file_name)
