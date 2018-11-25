@@ -8,7 +8,7 @@ def backtracking(combinlist,combinations,visited,start,target,candidates):
         if candidates[i]<=target:
             combinlist.append(candidates[i])
             visited[i]=1
-            backtracking(combinlist,combinations,visited,i+1,target-candidates[i],candidates)
+            backtracking(combinlist,combinations,visited,i,target-candidates[i],candidates)
             visited[i]=0
             combinlist.remove(candidates[i])
 
@@ -25,9 +25,3 @@ class Solution:
         visited = [0]*len(candidates)
         backtracking([],combinations,visited,0,target,candidates)
         return combinations
-
-if __name__ == '__main__':
-    sol= Solution
-    candidates = [10,1,2,7,6,1,5]
-    target = 8
-    print(sol.combinationSum2(sol,candidates,target))
