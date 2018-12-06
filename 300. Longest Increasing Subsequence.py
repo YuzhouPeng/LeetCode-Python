@@ -2,7 +2,7 @@ def binarysearch(tails,length,key):
     l=0
     h = length
     while l<h:
-        mid = l+(h-l)/2
+        mid = l+int((h-l)/2)
         if tails[mid]==key:
             return mid
         elif tails[mid]>key:
