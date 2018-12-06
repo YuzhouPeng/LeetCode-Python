@@ -1,3 +1,17 @@
+def binarysearch(tails,length,key):
+    l=0
+    h = length
+    while l<h:
+        mid = l+(h-l)/2
+        if tails[mid]==key:
+            return mid
+        elif tails[mid]>key:
+            h = mid
+        else:
+            l = mid+1
+
+
+    return l
 class Solution:
     def lengthOfLIS(self, nums):
         """
@@ -5,15 +19,12 @@ class Solution:
         :rtype: int
         """
         n = len(nums)
-        dp = [0]*n
-        for i in range(n):
-            maxvalue = 1
-            for j in range(i):
-                if nums[i]>nums[j]:
-                    maxvalue = max(dp[j]+1,maxvalue)
+        tails = [0]*n
+        length = 0
+        for num in nums:
+            index = binarysearch(tails,length,num)
+            tails[index] = num
+            if index==length:
+                length+=1
 
-            dp[i]=maxvalue
-        ret = 0
-        for i in range(n):
-            ret = max(ret,dp[i])
-        return ret
+        return length
