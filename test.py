@@ -1,26 +1,27 @@
+class Solution:
+    def islandPerimeter(self, grid):
+        """
+        :type grid: List[List[int]]
+        :rtype: int
+        """
+        self.totalvalue = 0
+        directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]
 
-import re,collections
-import queue
-# wordstring = 'it was the best of times it was the worst of times '
-# wordstring += 'it was the age of wisdom it was the age of foolishness'
-# wordlist = wordstring.split()
-# length = len(wordlist)
-# wordfreq = collections.Counter(wordlist)
-# Termfrequency = collections.namedtuple('terms','term tf')
-# tflist = []
-# for word in wordfreq:
-#     key = word
-#     value = wordfreq[key]
-#     print("{}--{}".format(key,value))
-#     tflist.append(Termfrequency(term=word,tf=float(value)/length))
-# print('length is {}'.format(length))
-# print(tflist)
+        def iteration(v, l):
+            result = 0
+            for dire in directions:
+                if grid[v + dire[0]][l + dire[1]] == 1:
+                    iteration(v + dire[0], l + dire[1])
+                else:
+                    self.totalvalue += 1
 
-# queue = collections.deque([([1,2,3,4,None,3,8], 0)])
-que = queue.PriorityQueue()
-nums = [1,2,3,4,3,8]
-for var in nums:
-    que.put(var)
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] != 0:
+                    iteration(i, j)
+                    break
+        return self.totalvalue
 
-while not que.empty():
-    print(que.get())
+if __name__ == '__main__':
+    sol = Solution
+    sol.islandPerimeter(sol,[[0,1,0,0],[1,1,1,0],[0,1,0,0],[1,1,0,0]])
