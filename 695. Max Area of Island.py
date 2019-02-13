@@ -19,6 +19,7 @@ class Solution:
             if r<0 or r>=m or c<0 or c>=n or grid[r][c]==0:
                 return 0
             area = 1
+            grid[r][c] = 0
             for i in range(len(direction)):
                 area+=dfs(grid,r+direction[i][0],c+direction[i][1],m,n)
             return area
