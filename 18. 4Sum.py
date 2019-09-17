@@ -1,15 +1,18 @@
 def sumIterate(sums,nums, solution, result, target,pos):
-    if len(solution) == 4 and sum(solution) == target and solution not in result:
-        newsol = solution.copy()
+    if len(solution) == 4 and sum(solution) == target:
+        # newsol = solution.copy()
+        newsol = []
+        for n in range(4):
+            newsol.append(solution[n])
         result.append(newsol)
         return
     elif len(solution)==4:
         return
     for i in range(pos,len(nums)):
-        if((nums[i]+nums[len(nums)-1]*(3-len(solution))+sums )< target):
-            continue
-        if ((nums[i]*(4-len(solution))+sums)>target):
+        if (nums[i]*(4-len(solution))+sums>target):
             return
+        if(nums[i]+nums[len(nums)-1]* (3-len(solution))+sums < target):
+            continue
         solution.append(nums[i])
         sumIterate(sums+nums[i],nums, solution, result, target,i+1)
         solution.pop(-1)
@@ -24,7 +27,7 @@ class Solution(object):
         visited = []
         solution = []
         result = []
-        sorted(nums)
+        nums.sort()
         for i in range(len(nums)):
             visited.append(0)
         if len(nums) == 0:
@@ -39,6 +42,7 @@ class Solution(object):
         #     solution.remove(nums[i])
         result2 = [list(t) for t in set(tuple(element) for element in result)]
         return result2
+
 
 if __name__ == '__main__':
     sol = Solution()
