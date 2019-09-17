@@ -1,15 +1,15 @@
 def sumIterate(sums,nums, solution, result, target,pos):
-    if len(solution) == 4 and sum(solution) == target:
+    if len(solution) == 4 and sum(solution) == target and solution not in result:
         newsol = solution.copy()
         result.append(newsol)
         return
     elif len(solution)==4:
         return
     for i in range(pos,len(nums)):
-        # if(nums[i]+nums[len(nums)-1]* (3-len(solution)+sums < target)):
-        #     continue
-        # if (nums[i]*(4-len(solution))+sums>target):
-        #     return
+        if((nums[i]+nums[len(nums)-1]*(3-len(solution))+sums )< target):
+            continue
+        if ((nums[i]*(4-len(solution))+sums)>target):
+            return
         solution.append(nums[i])
         sumIterate(sums+nums[i],nums, solution, result, target,i+1)
         solution.pop(-1)
